@@ -1,0 +1,139 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "module": "ESNext",
+    "jsx": "preserve",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    "allowJs": false,
+    "incremental": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "types": [
+      "node"
+    ]
+  }
+}
+
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+
+# Postgres
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DBNAME?sslmode=require
+
+# Stripe
+STRIPE_SECRET_KEY=sk_test_***
+STRIPE_WEBHOOK_SECRET=whsec_***
+STRIPE_PRICE_FAW=price_***
+STRIPE_PRICE_EFAW=price_***
+STRIPE_PRICE_PFA=price_***
+STRIPE_PRICE_FREC3=price_***
+STRIPE_PRICE_SECURITY=price_***
+STRIPE_PRICE_FARM=price_***
+STRIPE_PRICE_WAREHOUSE=price_***
+
+# NextAuth
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_generated_secret
+
+# Email (Resend preferred)
+RESEND_API_KEY=re_***
+FROM_EMAIL="RURASEC TRAINING <no-reply@rurasec.training>"
+NOTIFY_EMAIL=bookings@rurasec.training
+
+# Optional SMTP fallback
+# SMTP_HOST=smtp.example.com
+# SMTP_PORT=587
+# SMTP_USER=youruser
+# SMTP_PASS=yourpass
+import type { NextConfig } from "next";
+
+const securityHeaders = [
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  { key: "Cross-Origin-Embedder-Policy", value: "credentialless" },
+  { key: "Content-Security-Policy", value:
+    "default-src 'self'; script-src 'self' https://js.stripe.com 'unsafe-inline'; connect-src 'self' https://api.stripe.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; frame-src https://js.stripe.com https://hooks.stripe.com;" }
+];
+
+const nextConfig: NextConfig = {
+  experimental: { optimizePackageImports: ["lucide-react"] },
+  async headers() { return [{ source: "/(.*)", headers: securityHeaders }]; }
+};
+export default nextConfig;
+{
+  "name": "rurasec-training",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate dev --name init",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.19.0",
+    "@vercel/blob": "^0.24.0",
+    "next": "14.2.5",
+    "next-auth": "^4.24.8",
+    "@next-auth/prisma-adapter": "^1.0.7",
+    "nodemailer": "^6.9.13",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "resend": "^3.4.0",
+    "stripe": "^16.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/react": "^18.2.79",
+    "@types/react-dom": "^18.2.25",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.35",
+    "prisma": "^5.19.0",
+    "tailwindcss": "^3.4.7",
+    "tsx": "^4.15.7",
+    "typescript": "^5.6.2"
+  }
+}
+
+module.exports = { plugins: { tailwindcss: {}, autoprefixer: {} } };
+# RURASEC TRAINING – Preview Project
+
+## Quick start
+1) `cp .env.example .env.local` and fill in envs (DATABASE_URL, Stripe keys & Price IDs, RESEND or SMTP).
+2) `npm i`
+3) `npm run db:migrate`
+4) `npm run db:seed`
+5) `npm run dev` → open http://localhost:3000
+
+- Create more sessions in `/admin` (sign in via magic link at `/auth/signin`; set your user role to ADMIN in DB).
+- Book a session via `/schedule` → Stepper → Stripe Checkout.
+- Webhook endpoint: `/api/webhooks/stripe` (set STRIPE_WEBHOOK_SECRET in env and in Stripe dashboard).
+- Policies upload: POST a PDF to `/api/policies/upload` (build an admin form or use curl for now).
+
+## Notes
+- Prisma uses `SessionEvent` for course sessions to avoid colliding with NextAuth's `Session` table.
+- Email uses Resend by default; SMTP fallback is supported.
+- Security headers & simple rate-limiting can be added via middleware later.
+import type { Config } from "tailwindcss";
+export default {
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  theme: {
+    extend: {
+      colors: { primary: "#8B1B1F", charcoal: "#101216", muted: "#F5F7FA" },
+      borderRadius: { "2xl": "1.25rem" }
+    }
+  },
+  plugins: [require("@tailwindcss/typography"), require("@tailwindcss/forms")]
+} satisfies Config;
